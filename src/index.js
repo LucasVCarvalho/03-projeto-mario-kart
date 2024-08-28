@@ -4,6 +4,7 @@ const player1 = {
     MANOBRABILIDADE: 3,
     PODER: 3,
     PONTOS: 0,
+    TURBO: false,
 };
 
 const player2 = {
@@ -12,6 +13,7 @@ const player2 = {
     MANOBRABILIDADE: 4,
     PODER: 4,
     PONTOS: 0,
+    TURBO: false,
 };
 
 const player3 = {
@@ -20,6 +22,7 @@ const player3 = {
     MANOBRABILIDADE: 4,
     PODER: 2,
     PONTOS: 0,
+    TURBO: false,
 };
 
 const player4 = {
@@ -28,6 +31,7 @@ const player4 = {
     MANOBRABILIDADE: 4,
     PODER: 3,
     PONTOS: 0,
+    TURBO: false,
 };
 
 const player5 = {
@@ -36,6 +40,7 @@ const player5 = {
     MANOBRABILIDADE: 2,
     PODER: 5,
     PONTOS: 0,
+    TURBO: false,
 };
 
 const player6 = {
@@ -44,12 +49,13 @@ const player6 = {
     MANOBRABILIDADE: 2,
     PODER: 5,
     PONTOS: 0,
+    TURBO: false,
 };
 
-async function rollDice(lastWinner, player) {
+async function rollDice(player) {
     let random = Math.random();
     let bonus;
-
+    let result;
     switch (true) {
         case random < 0.5:
             bonus = 0
@@ -57,8 +63,16 @@ async function rollDice(lastWinner, player) {
         default:
             bonus = 1
     }
-
-    let result = lastWinner == player ? Math.floor(Math.random() * 6) + 1 + bonus : Math.floor(Math.random() * 6) + 1;
+    //conferindo se o player pode receber o turbo
+    if (player.TURBO === true) {
+        result = Math.floor(Math.random() * 6) + 1 + bonus;
+        if (bonus === 1) {
+            player.TURBO = false;
+            console.log(`Turbo de ${player.NOME} utilizado 💨`)
+        }
+    } else {
+        result = Math.floor(Math.random() * 6) + 1;
+    }
     return result;
 }
 
@@ -86,7 +100,7 @@ async function getRandomDamage() {
 
     switch (true) {
         case random < 0.5:
-            result = "CASCA"
+            result = "CASCO"
             break;
         default:
             result = "BOMBA"
@@ -102,7 +116,6 @@ async function logRollResult(characterName, block, diceResult, attribute) {
 
 async function playRaceEngine(character1, character2) {
     //ultimo vencedor
-    let lastConfrontWinner = "";
     for (let round = 1; round <= 5; round++) {
         console.log(`🏁 Rodada ${round}`);
 
@@ -112,8 +125,8 @@ async function playRaceEngine(character1, character2) {
         console.log(`Bloco: ${block}`);
 
         // rolar os dados
-        let diceResult1 = await rollDice(lastConfrontWinner, character1.NOME);
-        let diceResult2 = await rollDice(lastConfrontWinner, character2.NOME);
+        let diceResult1 = await rollDice(character1);
+        let diceResult2 = await rollDice(character2);
 
         //teste de habilidade
         let totalTestSkill1 = 0;
@@ -154,6 +167,7 @@ async function playRaceEngine(character1, character2) {
         if (block === "CONFRONTO") {
             let powerResult1 = diceResult1 + character1.PODER;
             let powerResult2 = diceResult2 + character2.PODER;
+            //recebendo se o dano é casco ou bomba
             let damage = await getRandomDamage();
             console.log(`${character1.NOME} confrontou com ${character2.NOME}! 🥊`)
 
@@ -169,27 +183,27 @@ async function playRaceEngine(character1, character2) {
                 diceResult2,
                 character2.PODER);
 
-            if (powerResult1 > powerResult2 && damage === "CASCA") {
+            if (powerResult1 > powerResult2 && damage === "CASCO") {
                 if (character2.PONTOS > 0) {
                     console.log(`${character1.NOME} venceu o contronto! ${character2.NOME} perdeu 1 ponto 🐢`)
                     console.log(`${character1.NOME} tem chance de ganhar turbo até o proximo confronto! 💨`)
                     character2.PONTOS--;
-                    lastConfrontWinner = character1.NOME
+                    character1.TURBO = true;
                 } else {
                     console.log(`${character1.NOME} venceu o contronto! ${character2.NOME} não tinha pontos para perder ❌`)
                     console.log(`${character1.NOME} tem chance de ganhar turbo até o proximo confronto! 💨`)
-                    lastConfrontWinner = character1.NOME
+                    character1.TURBO = true;
                 }
             } else if (powerResult1 > powerResult2 && damage === "BOMBA") {
                 if (character2.PONTOS > 1) {
                     console.log(`${character1.NOME} venceu o contronto! ${character2.NOME} perdeu 2 pontos 💣`)
                     console.log(`${character1.NOME} tem chance de ganhar turbo até o proximo confronto! 💨`)
                     character2.PONTOS -= 2;
-                    lastConfrontWinner = character1.NOME
+                    character1.TURBO = true;
                 } else if (character2.PONTOS > 0) {
                     console.log(`${character1.NOME} venceu o contronto! ${character2.NOME} perdeu 1 ponto 💣`)
                     console.log(`${character1.NOME} tem chance de ganhar turbo até o proximo confronto! 💨`)
-                    lastConfrontWinner = character1.NOME
+                    character1.TURBO = true;
                     character2.PONTOS--;
                 } else {
                     console.log(`${character1.NOME} venceu o contronto! ${character2.NOME} não tinha pontos para perder ❌`)
@@ -199,42 +213,40 @@ async function playRaceEngine(character1, character2) {
             }
 
 
-            if (powerResult2 > powerResult1 && damage === "CASCA") {
+            if (powerResult2 > powerResult1 && damage === "CASCO") {
                 if (character1.PONTOS > 0) {
                     console.log(`${character2.NOME} venceu o contronto! ${character1.NOME} perdeu 1 ponto 🐢`)
                     console.log(`${character2.NOME} tem chance de ganhar turbo até o proximo confronto! 💨`)
                     character1.PONTOS--;
-                    lastConfrontWinner = character2.NOME
+                    character2.TURBO = true;
                 } else {
                     console.log(`${character2.NOME} venceu o contronto! ${character1.NOME} não tinha pontos para perder ❌`)
                     console.log(`${character2.NOME} tem chance de ganhar turbo até o proximo confronto! 💨`)
-                    lastConfrontWinner = character2.NOME
+                    character2.TURBO = true;
                 }
             } else if (powerResult2 > powerResult1 && damage === "BOMBA") {
                 if (character1.PONTOS > 1) {
                     console.log(`${character2.NOME} venceu o contronto! ${character1.NOME} perdeu 2 pontos 💣`)
                     console.log(`${character2.NOME} tem chance de ganhar turbo até o proximo confronto! 💨`)
-                    lastConfrontWinner = character2.NOME
+                    character2.TURBO = true;
                     character1.PONTOS -= 2;
                 } else if (character1.PONTOS > 0) {
                     console.log(`${character2.NOME} venceu o contronto! ${character1.NOME} perdeu 1 ponto 💣`)
                     console.log(`${character2.NOME} tem chance de ganhar turbo até o proximo confronto! 💨`)
-                    lastConfrontWinner = character2.NOME
+                    character2.TURBO = true;
                     character1.PONTOS--;
                 }
                 else {
                     console.log(`${character2.NOME} venceu o contronto! ${character1.NOME} não tinha pontos para perder ❌`)
                     console.log(`${character2.NOME} tem chance de ganhar turbo até o proximo confronto! 💨`)
-                    lastConfrontWinner = character2.NOME
+                    character2.TURBO = true;
                 }
             }
 
             if (powerResult1 === powerResult2) {
-                lastConfrontWinner = ""
                 console.log("Confronto empatado! Nenhum ponto foi perdido")
             }
         }
-        console.log(`${totalTestSkill1} e ${totalTestSkill2}`)
         //verificando o vencedor
         if (totalTestSkill1 > totalTestSkill2) {
             console.log(`${character1.NOME} marcou um ponto!`);
